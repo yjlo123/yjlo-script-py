@@ -1,0 +1,365 @@
+[
+    {
+        "tag": "var_definition",
+        "line": 1,
+        "right": {
+            "tag": "application",
+            "line": 1,
+            "operator": {
+                "tag": "variable",
+                "line": 1,
+                "name": "int",
+                "type": "variable"
+            },
+            "operands": [
+                {
+                    "tag": "application",
+                    "line": 1,
+                    "operator": {
+                        "tag": "variable",
+                        "line": 1,
+                        "name": "input",
+                        "type": "variable"
+                    },
+                    "operands": [
+                        "What is your weight (kg)?\n=> "
+                    ]
+                }
+            ]
+        },
+        "left": "weight"
+    },
+    {
+        "tag": "var_definition",
+        "line": 2,
+        "right": {
+            "tag": "application",
+            "line": 2,
+            "operator": {
+                "tag": "variable",
+                "line": 2,
+                "name": "int",
+                "type": "variable"
+            },
+            "operands": [
+                {
+                    "tag": "application",
+                    "line": 2,
+                    "operator": {
+                        "tag": "variable",
+                        "line": 2,
+                        "name": "input",
+                        "type": "variable"
+                    },
+                    "operands": [
+                        "How tall are you (cm)?\n=> "
+                    ]
+                }
+            ]
+        },
+        "left": "height"
+    },
+    {
+        "tag": "var_definition",
+        "line": 4,
+        "right": {
+            "tag": "application",
+            "line": 4,
+            "operator": {
+                "tag": "variable",
+                "line": 4,
+                "name": "round",
+                "type": "variable"
+            },
+            "operands": [
+                {
+                    "tag": "application",
+                    "line": 4,
+                    "operator": {
+                        "tag": "variable",
+                        "line": 4,
+                        "name": "/.",
+                        "type": "operator"
+                    },
+                    "operands": [
+                        {
+                            "tag": "variable",
+                            "line": 4,
+                            "name": "weight",
+                            "type": "variable"
+                        },
+                        {
+                            "tag": "application",
+                            "line": 4,
+                            "operator": {
+                                "tag": "variable",
+                                "line": 4,
+                                "name": "**",
+                                "type": "operator"
+                            },
+                            "operands": [
+                                {
+                                    "tag": "application",
+                                    "line": 4,
+                                    "operator": {
+                                        "tag": "variable",
+                                        "line": 4,
+                                        "name": "/.",
+                                        "type": "operator"
+                                    },
+                                    "operands": [
+                                        {
+                                            "tag": "variable",
+                                            "line": 4,
+                                            "name": "height",
+                                            "type": "variable"
+                                        },
+                                        100
+                                    ]
+                                },
+                                2
+                            ]
+                        }
+                    ]
+                },
+                2
+            ]
+        },
+        "left": "bmi"
+    },
+    {
+        "tag": "application",
+        "line": 6,
+        "operator": {
+            "tag": "variable",
+            "line": 6,
+            "name": "print",
+            "type": "variable"
+        },
+        "operands": [
+            {
+                "tag": "application",
+                "line": 6,
+                "operator": {
+                    "tag": "variable",
+                    "line": 6,
+                    "name": "+",
+                    "type": "operator"
+                },
+                "operands": [
+                    "Your BMI: ",
+                    {
+                        "tag": "variable",
+                        "line": 6,
+                        "name": "bmi",
+                        "type": "variable"
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        "tag": "var_definition",
+        "line": 8,
+        "left": "bmi_to_msg",
+        "right": {
+            "tag": "function_definition",
+            "line": 8,
+            "is_class": false,
+            "name": "bmi_to_msg",
+            "parent": [],
+            "parameters": [
+                "bmi"
+            ],
+            "body": [
+                {
+                    "tag": "if",
+                    "line": 9,
+                    "predicate": {
+                        "tag": "application",
+                        "line": 9,
+                        "operator": {
+                            "tag": "variable",
+                            "line": 9,
+                            "name": ">",
+                            "type": "operator"
+                        },
+                        "operands": [
+                            {
+                                "tag": "variable",
+                                "line": 9,
+                                "name": "bmi",
+                                "type": "variable"
+                            },
+                            30
+                        ]
+                    },
+                    "consequent": [
+                        {
+                            "tag": "return",
+                            "line": 10,
+                            "expression": "Obese"
+                        }
+                    ],
+                    "alternative": {
+                        "tag": "if",
+                        "line": 11,
+                        "predicate": {
+                            "tag": "application",
+                            "line": 11,
+                            "operator": {
+                                "tag": "variable",
+                                "line": 11,
+                                "name": ">",
+                                "type": "operator"
+                            },
+                            "operands": [
+                                {
+                                    "tag": "variable",
+                                    "line": 11,
+                                    "name": "bmi",
+                                    "type": "variable"
+                                },
+                                25
+                            ]
+                        },
+                        "consequent": [
+                            {
+                                "tag": "return",
+                                "line": 12,
+                                "expression": "Overweight"
+                            }
+                        ],
+                        "alternative": {
+                            "tag": "if",
+                            "line": 13,
+                            "predicate": {
+                                "tag": "application",
+                                "line": 13,
+                                "operator": {
+                                    "tag": "variable",
+                                    "line": 13,
+                                    "name": ">",
+                                    "type": "operator"
+                                },
+                                "operands": [
+                                    {
+                                        "tag": "variable",
+                                        "line": 13,
+                                        "name": "bmi",
+                                        "type": "variable"
+                                    },
+                                    18.5
+                                ]
+                            },
+                            "consequent": [
+                                {
+                                    "tag": "return",
+                                    "line": 14,
+                                    "expression": "Normal (healthy weight)"
+                                }
+                            ],
+                            "alternative": {
+                                "tag": "if",
+                                "line": 15,
+                                "predicate": {
+                                    "tag": "application",
+                                    "line": 15,
+                                    "operator": {
+                                        "tag": "variable",
+                                        "line": 15,
+                                        "name": ">",
+                                        "type": "operator"
+                                    },
+                                    "operands": [
+                                        {
+                                            "tag": "variable",
+                                            "line": 15,
+                                            "name": "bmi",
+                                            "type": "variable"
+                                        },
+                                        16
+                                    ]
+                                },
+                                "consequent": [
+                                    {
+                                        "tag": "return",
+                                        "line": 16,
+                                        "expression": "Underweight"
+                                    }
+                                ],
+                                "alternative": {
+                                    "tag": "if",
+                                    "line": 17,
+                                    "predicate": {
+                                        "tag": "application",
+                                        "line": 17,
+                                        "operator": {
+                                            "tag": "variable",
+                                            "line": 17,
+                                            "name": ">",
+                                            "type": "operator"
+                                        },
+                                        "operands": [
+                                            {
+                                                "tag": "variable",
+                                                "line": 17,
+                                                "name": "bmi",
+                                                "type": "variable"
+                                            },
+                                            15
+                                        ]
+                                    },
+                                    "consequent": [
+                                        {
+                                            "tag": "return",
+                                            "line": 18,
+                                            "expression": "Severely underweight"
+                                        }
+                                    ],
+                                    "alternative": [
+                                        {
+                                            "tag": "return",
+                                            "line": 20,
+                                            "expression": "Very severely underweight"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+    },
+    {
+        "tag": "application",
+        "line": 24,
+        "operator": {
+            "tag": "variable",
+            "line": 24,
+            "name": "print",
+            "type": "variable"
+        },
+        "operands": [
+            {
+                "tag": "application",
+                "line": 24,
+                "operator": {
+                    "tag": "variable",
+                    "line": 24,
+                    "name": "bmi_to_msg",
+                    "type": "variable"
+                },
+                "operands": [
+                    {
+                        "tag": "variable",
+                        "line": 24,
+                        "name": "bmi",
+                        "type": "variable"
+                    }
+                ]
+            }
+        ]
+    }
+]

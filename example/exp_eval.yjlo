@@ -1,0 +1,250 @@
+class Tokenizer {
+	
+	var tokens = []
+	
+	class Token {
+		var type
+		var value
+		
+		@(type_, value_) {
+			type = type_
+			value = value_
+		}
+	}
+	
+	func _strToNum(str) {
+		func help(lst, num){
+			if lst.isEmpty { return num }
+			var d = $char_code(lst.head) - $char_code("0")
+			return help(lst.tail, num*10+d)
+		}
+
+		return help($string_to_char_list(str), 0)
+	}
+
+	func tokenize(str) {
+		var result = []
+		var chars = $string_to_char_list(str)
+		var reversed_tokens = []
+
+		var current = ""
+		while !chars.isEmpty {
+			var c = chars.head
+			// Ignore whitespace.
+			if c == " " {
+				chars = chars.tail
+				continue
+			// number.
+			} else if c >= '0' && c <= '9' {
+				current = c
+				chars = chars.tail
+				while !chars.isEmpty && chars.head >= '0' && chars.head <= '9' {
+					current += chars.head
+					chars = chars.tail
+					c = chars.head
+				}
+				//print("number ", _strToNum(current))
+				reversed_tokens = (Token("number", _strToNum(current)), reversed_tokens)
+			// operator
+			} else {
+				//print("char ", c)
+				chars = chars.tail
+				reversed_tokens = (Token("operator", c),reversed_tokens)
+			}
+		}
+		// reverse tokens
+		while !reversed_tokens.isEmpty {
+			tokens = (reversed_tokens.head, tokens)
+			reversed_tokens = reversed_tokens.tail
+		}
+	}
+}
+
+class Stack {
+	var _list = null
+	var _size = 0
+	
+	@() {
+		_list = []
+	}
+	
+	/* Pushes an item onto the top of this stack. */
+	func push(n) {
+		_list = (n, _list)
+		_size++
+	}
+	
+	/* Removes the item at the top of this stack 
+	 * and returns that item. */
+	func pop() {
+		if _list.isEmpty { throw("Exception: empty stack.") }
+		value := _list.head
+		_list = _list.tail
+		_size--
+		return value
+	}
+	
+	/* Looks at the item at the top of this stack
+	 * without removing it from the stack. */
+	func peek() {
+		if !empty() {
+			return _list.head
+		} else {
+			throw("Exception: empty stack.")
+		}
+	}
+	
+	/* Returns the number of items in this stack. */
+	func size() { return _size }
+	
+	/* Tests if this stack is empty. */
+	func empty() { return size() == 0 }
+	
+	/* Removes all of the elements from this stack. */
+	func clear() {
+		_list = []
+		_size = 0
+	}
+	
+	/* Returns a string representation of the stack. */
+	func toString() {
+		func help(lst, str) {
+			if lst.isEmpty { return str }
+			return help(lst.tail, lst.head + " ) " + str)
+		}
+		return help(_list, "")
+	}
+
+}
+
+func precedence(operator) {
+	switch operator {
+		case "_-": // negative
+			return 3
+		case "*", "/", "%":
+			return 2
+		case "+", "-":
+			return 1
+		default:
+			return 0
+	}
+}
+
+func isOperator(v) {
+	if precedence(v) > 0 && precedence(v) < 3 {
+		// binary op: + - * / %
+		return 2
+	} else if precedence(v) > 2 {
+		// unary op: _-
+		return 1
+	}
+	return 0
+}
+
+func add(x, y) { return x + y }
+func sub(x, y) { return x - y }
+func mul(x, y) { return x * y }
+func div(x, y) { return x /. y }
+func mod(x, y) { return x % y }
+func neg(x) { return -x }
+
+func eval_op(op, x, y) {
+	var fun = null
+	switch op {
+		case "+": op = add
+		case "-": op = sub
+		case "*": op = mul
+		case "/": op = div
+		case "%": op = mod
+		case "_-": return neg(x)
+	}
+	return op(x,y)
+}
+
+func eval(expression) {
+	var tokenizer = Tokenizer()
+	tokenizer.tokenize(expression)
+	var tokens = tokenizer.tokens
+
+	//Convert in-fix expression to post-fix expression
+	var infix_list = tokenizer.tokens
+	var postfix_stack = Stack()
+	var stack = Stack()
+
+	var prev_token = null
+	var token = null
+
+	for t in infix_list {
+		prev_token = token
+		token = t
+		if token.type == 'number' {
+			postfix_stack.push(token.value)
+		} else if token.value == '(' {
+			stack.push(token)
+		} else if token.value == ')' {
+			while stack.size() > 0 && stack.peek().value != "(" {
+				postfix_stack.push(stack.pop().value)
+			}
+			if stack.size() > 0 {
+				stack.pop() // pop '('
+			} else {
+				throw("Unmatched bracket.")
+			}
+		} else {
+			// operators
+			/* prefix unary operators with '_' */
+			if token.value == '-' {
+				// negative operator
+				if postfix_stack.size() == 0 ||
+					(prev_token != null && prev_token.value == "(") {
+					token.value = "_-"
+				}
+			}
+			while stack.size() > 0 &&
+				precedence(token.value) <= precedence(stack.peek().value) {
+				postfix_stack.push(stack.pop().value)
+			}
+			stack.push(token)
+		}
+	}
+
+	// pop the rest of the tokens in the stack
+	while stack.size() > 0 {
+		postfix_stack.push(stack.pop().value)
+	}
+
+	// Reverse stack
+	var reversed_stack = Stack()
+	while postfix_stack.size() > 0 {
+		reversed_stack.push(postfix_stack.pop())
+	}
+
+	/**
+	 * Evaluation
+	 */
+	var value_stack = Stack()
+	while reversed_stack.size() > 0 {
+		var token = reversed_stack.pop()
+		if isOperator(token) == 2 {
+			var operand2 = value_stack.pop()
+			var operand1 = value_stack.pop()
+			value_stack.push(eval_op(token, operand1, operand2))
+		} else if isOperator(token) == 1 {
+			var operand = value_stack.pop()
+			value_stack.push(eval_op(token, operand, 0))
+		} else {
+			value_stack.push(token)
+		}
+		// print(value_stack.toString())
+	}
+
+	// return evaluation result
+	return value_stack.pop()
+}
+
+print('ExpEval v1.0\nby Siwei\nType "exit" to quit')
+expression := input('>> ')
+while expression != 'exit' {
+	print(eval(expression))
+	expression = input('>> ')
+}
