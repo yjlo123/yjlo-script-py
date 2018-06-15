@@ -1,17 +1,20 @@
 
 class TokenType():
 	NEWLINE = 'newline'
+	EOF = 'eof'
 	NAME = 'name'
 	NUMBER = 'number'
 	STRING = 'string'
 	OPERATOR = 'operator'
 
-def make(t, v, l):
-	return {
-		'type': t,
-		'value': v,
-		'line': l,
-	}
+class Token():
+	def __init__(self, t, value=None, line=-1):
+		self.type = t
+		self.value = value
+		self.line = line
+
+	def __str__(self):
+		return '[{0}]	{1}'.format(self.type, str(self.value))
 
 ESC_CHAR = {
 	'b': '\b',
@@ -30,8 +33,8 @@ def tokenize(s):
 		c = s[i]
 		# new line
 		if c == '\n':
-			if len(tokens) > 0:
-				tokens.append(make(TokenType.NEWLINE, None, line))
+			if len(tokens) > 0 and tokens[-1].type != TokenType.NEWLINE:
+				tokens.append(Token(TokenType.NEWLINE, None, line))
 				while c == '\n':
 					line += 1
 					i += 1
@@ -53,7 +56,7 @@ def tokenize(s):
 				i += 1
 				num += c
 			# TODO float, convert ...
-			tokens.append(make(TokenType.NUMBER, num, line))
+			tokens.append(Token(TokenType.NUMBER, num, line))
 		# string
 		elif c == '\'' or c == '"' or c == '`':
 			string = ''
@@ -74,7 +77,7 @@ def tokenize(s):
 						c = ESC_CHAR[c]
 				string += c
 				i += 1
-			tokens.append(make(TokenType.STRING, string, line))
+			tokens.append(Token(TokenType.STRING, string, line))
 		# single line comment
 		elif c == '/' and i+1 < length and s[i+1] == '/':
 			i += 1
@@ -86,17 +89,20 @@ def tokenize(s):
 				i += 1
 		# single char operators
 		elif c in '+-*/%!':
-			tokens.append(make(TokenType.OPERATOR, c, line))
+			tokens.append(Token(TokenType.OPERATOR, c, line))
 		else:
 			print('Ignored: ', c)
 		i += 1
+	tokens.append(Token(TokenType.EOF, None, line))
 	for token in tokens:
 		print(token)
 
 def main():
 	tokenize(
 r'''17/
-
+fn f(a, b) {
+	print(a + b)
+}
 // comments
 2213-3+"ab\ncd"//123'''
 )
