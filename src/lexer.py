@@ -45,7 +45,7 @@ class Lexer():
 			self.i += 1
 			self.c = self.s[self.i]
 			if self.has_next():
-				self.next = self.s[self.i+1]
+				self.next = self.s[self.i + 1]
 			else:
 				self.next = None
 		else:
@@ -55,68 +55,123 @@ class Lexer():
 	def has_next(self):
 		return self.i + 1 < self.len
 
+	def peek_next(self, n=1):
+		if self.i + n < self.len:
+			return self.s[self.i + n]
+		return None
+
+	def make_name(self):
+		name = self.c
+		while self.has_next():
+			if self._is_letter(self.next) or self._is_digit(self.next) or self.next in'_':
+				name += self.next
+				self.advance()
+			else:
+				break
+		self.add(TokenType.NAME, name)
+
+	def make_number(self):
+		num = self.c
+		while self.has_next():
+			if self.next == '_':
+				self.advance()
+				continue
+			elif not self._is_digit(self.next):
+				break
+			self.advance()
+			num += self.c
+		if self.has_next() and self.next == '.' and self._is_digit(self.peek_next(2)):
+			self.advance()
+			num += self.c
+			while self.has_next():
+				if self.next == '_':
+					self.advance()
+					continue
+				elif not self._is_digit(self.next):
+					break
+				self.advance()
+				num += self.c
+		# TODO convert ...
+		self.add(TokenType.NUMBER, num)
+
+	def make_string(self):
+		string = ''
+		quo = self.c
+		while self.has_next():
+			self.advance()
+			if self.c < ' ' and self.c != '\t' and quo != '`':
+				raise Exception('Unterminated string.')
+			if self.c == quo:
+				break
+			if self.c == '\\':
+				if not self.has_next():
+					raise Exception('Unterminated string.')
+				self.advance()
+				if self.c in ESC_CHAR:
+					string += ESC_CHAR[self.c]
+			string += self.c
+		self.add(TokenType.STRING, string)
+
+	def make_comment(self):
+		self.advance()
+		# block comment
+		if self.c == '*':
+			while self.has_next():
+				self.advance()
+				if self.c == '\n':
+					self.line += 1
+				elif self.c == '*' and self.has_next() and self.next == '/':
+					self.advance()
+					break
+		# single line comment
+		elif self.c == '/':
+			while self.has_next():
+				self.advance()
+				if self.c == '\n' or self.c == '\r' or not self.has_next():
+					self.line += 1
+					break
+		else:
+			# should never reach here
+			raise Exception('Lexing error')
+
+	@staticmethod
+	def _is_digit(char):
+		return char >= '0' and char <= '9'
+
+	@staticmethod
+	def _is_letter(char):
+		return (char >= 'a' and char <= 'z') or (char >= 'A' and char <= 'Z')
+
 	def tokenize(self, source):
 		self.init_source(source)
 		self.advance()
 		while self.c is not None:
 			# new line
 			if self.c == '\n':
+				# keep only one new-line as a token
 				if len(self.tokens) > 0 and self.tokens[-1].type != TokenType.NEWLINE:
 					self.add(TokenType.NEWLINE, None)
-					while self.c == '\n':
-						self.line += 1
-						self.advance()
+				while self.c == '\n':
+					self.line += 1
+					self.advance()
+			# ignore spaces
 			if self.c <= ' ':
 				self.advance()
 				continue
 			# name
-			elif (self.c >= 'a' and self.c <= 'z') or (self.c >= 'A' and self.c <= 'Z') or self.c in'_$@':
-				name = self.c
-				while self.has_next():
-					if (self.next >= 'a' and self.next <= 'z') or (self.next >= 'A' and self.next <= 'Z') or (self.next >= '0' and self.next <= '9') or self.next in'_':
-						name += self.next
-						self.advance()
-					else:
-						break
-				self.add(TokenType.NAME, name)
+			elif self._is_letter(self.c) or self.c in'_$@':
+				self.make_name()
 			# number
-			elif self.c >= '0' and self.c <= '9':
-				num = self.c
-				while self.has_next():
-					if self.next == '_':
-						self.advance()
-						continue
-					elif self.next < '0' or self.next > '9':
-						break
-					self.advance()
-					num += self.c
-				# TODO float, convert ...
-				self.add(TokenType.NUMBER, num)
+			elif self._is_digit(self.c):
+				self.make_number()
 			# string
 			elif self.c == '\'' or self.c == '"' or self.c == '`':
-				string = ''
-				quo = self.c
-				while self.has_next():
-					self.advance()
-					if self.c < ' ' and self.c != '\t' and quo != '`':
-						raise Exception('Unterminated string.')
-					if self.c == quo:
-						break
-					if self.c == '\\':
-						if not self.has_next():
-							raise Exception('Unterminated string.')
-						self.advance()
-						if self.c in ESC_CHAR:
-							string += ESC_CHAR[self.c]
-					string += self.c
-				self.add(TokenType.STRING, string)
-			# single line comment
-			elif self.c == '/' and self.has_next() and self.next == '/':
-				while self.has_next():
-					self.advance()
-					if self.c == '\n' or self.c == '\r' or not self.has_next():
-						self.line += 1
-						break
+				self.make_string()
+			# comment
+			elif self.c == '/' and self.has_next() and self.next in '*/':
+				self.make_comment()
+			# combining
+			# TODO
 			# single char operators
 			elif self.c in '+-*/%!(){},':
 				self.add(TokenType.OPERATOR, self.c)
@@ -131,11 +186,14 @@ def main():
 	lexer = Lexer()
 	lexer.tokenize(
 r'''17/
+/* a
+This is a block comment
+*/
 fn f(a, b) {
 	print(a + b)
 }
 // comments
-2213-3+"ab\ncd"//123'''
+2213-3.56+"ab\ncd"//123'''
 )
 
 if __name__ == '__main__':
