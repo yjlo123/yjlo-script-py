@@ -1,4 +1,6 @@
-class TokenType():
+from enum import Enum
+
+class TokenType(Enum):
 	NEWLINE = 'newline'
 	EOF = 'eof'
 	NAME = 'name'
@@ -6,24 +8,41 @@ class TokenType():
 	STRING = 'string'
 	OPERATOR = 'operator'
 
-class Token():
+class Token(object):
 	def __init__(self, t, value=None, line=-1):
 		self.type = t
 		self.value = value
 		self.line = line
 
 	def __str__(self):
-		return '({0})[{1}]	{2}'.format(self.line, self.type, str(self.value))
+		return '[{0}] {1}	{2}'.format(self.line, self.type.name, [self.value])
 
-ESC_CHAR = {
-	'b': '\b',
-	'f': '\f',
-	'n': '\n',
-	'r': '\r',
-	't': '\t',
-}
+class Lexer(object):
+	ESC_CHAR = {
+		'b': '\b',
+		'f': '\f',
+		'n': '\n',
+		'r': '\r',
+		't': '\t',
+	}
 
-class Lexer():
+	OPERATORS = {
+		'+': ['=', '+'],
+		'-': ['=', '-'],
+		'*': ['=', '*'],
+		'/': ['=', '.'],
+		'%': ['='],
+		':': ['='],
+		'=': ['=', '=='],
+		'>': ['=', '>', '>>'],
+		'<': ['=', '<'],
+		'!': ['='],
+		'^': ['='],
+		'&': ['=', '&'],
+		'|': ['=', '|'],
+		'.': ['.', '..', '.<', '.>'],
+	}
+
 	def __init__(self):
 		self.tokens = []
 		self.line = 1
@@ -91,7 +110,7 @@ class Lexer():
 					break
 				self.advance()
 				num += self.c
-		# TODO convert ...
+		num = float(num) if '.' in num else int(num)
 		self.add(TokenType.NUMBER, num)
 
 	def make_string(self):
@@ -100,17 +119,26 @@ class Lexer():
 		while self.has_next():
 			self.advance()
 			if self.c < ' ' and self.c != '\t' and quo != '`':
-				raise Exception('Unterminated string.')
+				raise Exception('[Lexer] Unterminated string.')
 			if self.c == quo:
 				break
 			if self.c == '\\':
 				if not self.has_next():
-					raise Exception('Unterminated string.')
+					raise Exception('[Lexer] Unterminated string.')
 				self.advance()
-				if self.c in ESC_CHAR:
-					string += ESC_CHAR[self.c]
+				if self.c in self.ESC_CHAR:
+					string += self.ESC_CHAR[self.c]
 			string += self.c
 		self.add(TokenType.STRING, string)
+
+	def make_operator(self):
+		prefix = self.c
+		suffix_candidates = self.OPERATORS[prefix]
+		suffix = ''
+		while self.has_next() and suffix + self.next in suffix_candidates:
+			suffix += self.next
+			self.advance()
+		self.add(TokenType.OPERATOR, prefix + suffix)
 
 	def make_comment(self):
 		self.advance()
@@ -132,7 +160,7 @@ class Lexer():
 					break
 		else:
 			# should never reach here
-			raise Exception('Lexing error')
+			raise Exception('[Lexer] Lexing error')
 
 	@staticmethod
 	def _is_digit(char):
@@ -170,31 +198,32 @@ class Lexer():
 			# comment
 			elif self.c == '/' and self.has_next() and self.next in '*/':
 				self.make_comment()
-			# combining
-			# TODO
+			# operators
+			elif self.c in self.OPERATORS:
+				self.make_operator()
 			# single char operators
-			elif self.c in '+-*/%!(){},':
-				self.add(TokenType.OPERATOR, self.c)
 			else:
-				print('Ignored: ', self.c)
+				self.add(TokenType.OPERATOR, self.c)
+			# move to next token
 			self.advance()
 		self.add(TokenType.EOF, None)
-		for token in self.tokens:
-			print(token)
+		return self.tokens
 
 def main():
 	lexer = Lexer()
-	lexer.tokenize(
+	tokens = lexer.tokenize(
 r'''17/
 /* a
 This is a block comment
 */
 fn f(a, b) {
-	print(a + b)
+	print(a * b++)
 }
 // comments
-2213-3.56+"ab\ncd"//123'''
-)
+2213-3.56+"ab\ncd";alert()//123
+_a''')
+	for token in tokens:
+		print(token)
 
 if __name__ == '__main__':
 	main()
