@@ -34,7 +34,7 @@ class Parser(object):
 
 	def get_precedence(self, operator):
 		for key, value in self.PRECEDENCE.items():
-			if value in value:
+			if operator in value:
 				return key
 		return -1
 
