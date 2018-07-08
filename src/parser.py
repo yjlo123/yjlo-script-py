@@ -54,6 +54,11 @@ class Parser(object):
 		return (self.t and self.t.type == token_type
 			and ( self.t.value == value if value else True))
 
+	def check_next(self, token_type, value):
+		self.ignore_newline()
+		return (self.n and self.n.type == token_type
+			and ( self.n.value == value if value else True))
+
 	def check_operator(self, value=None):
 		return self.check(TokenType.OPERATOR, value)
 
@@ -82,6 +87,7 @@ class Parser(object):
 		prev = None
 		node = None
 		infix = []
+		paren_count = 0
 		while not self.reach_eof():
 			if self.t.type == TokenType.NEWLINE:
 				self.skip()
@@ -89,34 +95,50 @@ class Parser(object):
 				break
 			prev = self.t
 			# TODO check expr terminator
+			if self.check_operator(')') and paren_count == 0:
+				break
 			# TODO bracket
-			if self.check_name():
+			if self.check_operator('('):
+				paren_count += 1
+			if self.check_operator(')'):
+				paren_count -= 1
+
+			# process tokens
+			if self.check_name('func'):
 				# TODO
 				pass
 			elif self.check(TokenType.STRING) or self.check(TokenType.NUMBER):
+				# constant
 				node = {
 					'tag': 'constant',
 					'value': self.t.value,
 					'line': self.t.line,
 				}
+				self.advance()
+			elif self.check_name() and self.check_next(TokenType.OPERATOR, '('):
+				# func call
+				node = self.func_call()
 			elif self.check_name():
+				# variable
 				node = {
 					'tag': 'variable',
 					'name': self.t.value,
 					'type': 'variable',
 					'line': self.t.line,
 				}
+				self.advance()
 			elif self.check_operator():
+				# operator
 				node = {
 					'tag': 'variable',
 					'name': self.t.value,
 					'type': 'operator',
 					'line': self.t.line,
 				}
+				self.advance()
 			else:
 				raise Exception('[Parser] Unsupported expression token')
 			infix.append(node)
-			self.advance()
 		# print(infix)
 		
 		# in-fix to post-fix
@@ -157,6 +179,31 @@ class Parser(object):
 				ast_stack.append(node)
 		return ast_stack[0]
 
+	def func_call(self):
+		apply_node = {
+			'tag': 'application',
+			'line': self.t.line,
+		}
+		apply_node['operator'] = {
+			'tag': 'variable',
+			'line': self.t.line,
+			'name': self.t.value,
+			'type': 'variable',
+		}
+		operands = []
+		self.advance() # var name
+		self.advance('(')
+		self.ignore_newline()
+		while not self.check_operator(')'):
+			operands.append(self.expr())
+			if self.check_operator(')'):
+				break
+			self.advance(',')
+			self.ignore_newline()
+		self.advance(')')
+		apply_node['operands'] = operands
+		return apply_node
+
 	def stmt(self):
 		ast = None
 		if self.check_operator(';'):
@@ -185,9 +232,9 @@ class Parser(object):
 
 	def parse(self, tokens):
 		self.init_tokens(tokens)
-		print('==== TOKENS ====')
-		for t in self.tokens:
-			print(t)
+		# print('==== TOKENS ====')
+		# for t in self.tokens:
+		# 	print(t)
 		return self.stmt_list()
 
 def main():

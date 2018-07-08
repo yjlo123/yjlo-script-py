@@ -40,7 +40,6 @@ def _output(*xs):
 			print(lst.lst2arr(x))
 		else:
 			print(x)
-	print()
 
 def _string_to_char_list(s):
 	return lst.lst(*list(s))
